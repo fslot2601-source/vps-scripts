@@ -56,12 +56,23 @@ Gitea 镜像：[PI/vps-scripts](http://10.0.0.98:3000/PI/vps-scripts)（内网�
 - 仅从 `https://dl.nssurge.com/` 下载固定版本安装包。
 - 创建独立低权限账户 `snell-auto`，使用 systemd 管理服务、开机启动、失败重启。
 - 检查本机 TCP 监听；开启中的 UFW/firewalld 放行所选端口的 TCP 和 UDP。
-- 保留已有 Snell：检测到相关文件、服务或进程时停止，不覆盖。
-- 安装失败且服务尚未通过检查时，撤回本次创建的服务、配置、二进制和账户；apt 安装的工具保留。
+- 检测到已有 Snell 时，提示备份后覆盖重装；输入 `yes` 即可继续。
+- 标准安装保留原端口、密钥、服务端配置、systemd 服务及原来的开机启动策略；HTTP 混淆设置也会带入输出的节点行。
+- 原文件备份到 `/var/backups/snell/backup-XXXXXXXX/`，目录仅 root 可访问；成功后也保留备份。
+- 下载完成并备份后才停止旧服务，尽量缩短断线时间；新服务启动失败时恢复被替换文件并重新启动原先运行中的服务。恢复失败会明确报警。
+- 新安装失败时只撤回本次创建的文件和账户；apt 安装的工具保留。
 
 **云厂商安全组仍需放行输出的端口（TCP 和 UDP）。** 脚本不能从 VPS 内修改云平台安全组，也不会关闭防火墙或修改自定义 nftables/iptables 规则。v5 的 QUIC 代理模式需要 UDP。
 
 “本机启动成功”不代表公网已连通；必须在 Surge 中做实际连接测试。公网 IP 查询会访问 api.ipify.org，失败时尝试 ipv4.icanhazip.com。
+
+### 已安装过，怎样重装？
+
+重新执行上面的 GitHub 下载命令，输入 `yes`。不必先卸载，也不用手动删除旧配置。
+
+覆盖范围是标准安装：`/usr/local/bin/snell-server`、`/etc/snell/snell-server.conf`、`snell.service`。已有服务可以位于 systemd 的系统目录，但必须使用上述程序与配置路径。服务和配置将原样复用，仅替换程序并重新生成节点行。已有程序即使版本较新，也会按确认提示固定重装为 **5.0.1**。
+
+对于自定义路径、多个独立实例、符号链接、缺失原服务的配置或特殊监听格式，脚本会给出具体原因，不会强行杀进程或删除整个配置目录。重装有短暂断线；如保留的自定义配置与 5.0.1 不兼容，启动失败会触发回滚。
 
 ### 文件与日常查看
 
@@ -91,5 +102,11 @@ sudo cat /etc/snell/surge-proxy.txt
 ### 验证边界
 
 已通过 Bash 语法、IPv4 地址校验、随机端口范围、TCP/UDP 占用匹配、macOS 误运行保护、模拟 Debian/Ubuntu 系统变量加载、防覆盖创建、回滚保留无关文件，以及防火墙查询失败后继续输出配置的检查；也实际下载检查了官方 amd64 / aarch64 安装包中的 Linux 程序。macOS 不能验证 Linux 二进制运行、systemd 和真实防火墙行为，尚未在真实 VPS 上完成安装及 Surge 端到端连接测试。
+
+覆盖重装的 16 项本地模拟回归测试已通过，包含保留端口/密钥、备份权限、失败回滚、原服务启动策略、路径校验及并发文件保护（只使用临时目录及模拟 systemd，不操作本机服务）：
+
+```bash
+python3 tests/test_installer.py
+```
 
 官方参考：[Snell 发布说明](https://kb.nssurge.com/surge-knowledge-base/release-notes/snell) · [Surge 配置格式](https://manual.nssurge.com/policies/snell.html)
