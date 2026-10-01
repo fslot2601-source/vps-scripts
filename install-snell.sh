@@ -74,6 +74,37 @@ valid_ipv4() {
     ! (( 10#$a == 172 && 10#$b >= 16 && 10#$b <= 31 || 10#$a == 100 && 10#$b >= 64 && 10#$b <= 127 ))
 }
 
+show_result() {
+    local public_ip=$1 port=$2 psk=$3
+    local green='' cyan='' yellow='' bold='' reset=''
+    # Keep redirected output clean; respect terminals that disable color.
+    if [[ -t 1 && ${TERM:-dumb} != dumb && -z ${NO_COLOR+x} ]]; then
+        green=$'\033[1;32m'
+        cyan=$'\033[1;36m'
+        yellow=$'\033[1;33m'
+        bold=$'\033[1m'
+        reset=$'\033[0m'
+    fi
+    printf '\n%s╔══════════════════════════════════════════════╗\n' "$green"
+    printf '║              Snell 安装完成                  ║\n'
+    printf '╚══════════════════════════════════════════════╝%s\n\n' "$reset"
+    printf '  服务器 IP   %s%s%s\n' "$cyan" "$public_ip" "$reset"
+    printf '  连接端口    %s%s%s\n' "$cyan" "$port" "$reset"
+    printf '  连接密钥    %s%s%s\n' "$bold" "$psk" "$reset"
+    printf '  协议版本    Snell v5（服务端 %s）\n' "$SNELL_VERSION"
+    printf '  服务状态    %s● 本机已启动 · 已设置开机启动%s\n' "$green" "$reset"
+    printf '\n%s━━━━━━━━━━ 复制下面这行到 Surge ━━━━━━━━━━%s\n\n' "$cyan" "$reset"
+    # A single, undecorated node line: safe to select and paste into [Proxy].
+    printf '%s我的VPS = snell, %s, %s, psk=%s, version=5%s\n' "$bold" "$public_ip" "$port" "$psk" "$reset"
+    printf '\n%s━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n\n' "$cyan" "$reset"
+    printf '  添加位置：Surge 配置 → [Proxy]\n'
+    printf '  %s安全组需放行：%s / TCP + UDP%s\n' "$yellow" "$port" "$reset"
+    printf '  配置已保存：%s/surge-proxy.txt\n' "$CONF_DIR"
+    printf '  %s节点含密钥，请勿公开分享或截图。%s\n' "$yellow" "$reset"
+    printf '\n  本机启动不代表公网可连接，请在 Surge 中测试节点。\n'
+    printf '  NAT VPS 还需配置端口映射。\n\n'
+}
+
 main() {
     [[ $(uname -s) == Linux ]] || fail '请在 Linux VPS 上运行，不要在 Mac 上运行。'
     [[ $EUID == 0 ]] || fail '请使用 sudo bash install-snell.sh 运行。'
@@ -236,12 +267,8 @@ SERVICE
         info '没有检测到启用的 UFW/firewalld；不改动自定义 nftables/iptables 规则。'
     fi
 
-    info '5/5 本机服务已启动，开机启动已设置。'
-    printf '\n将下面一行加入 Surge 配置的 [Proxy] 段：\n\n'
-    printf '我的VPS = snell, %s, %s, psk=%s, version=5\n' "$public_ip" "$port" "$psk"
-    printf '\n配置已保存：%s/surge-proxy.txt（含密钥，请勿公开）\n' "$CONF_DIR"
-    printf '\n还需确认云厂商安全组允许入站 %s/TCP 和 %s/UDP。\n' "$port" "$port"
-    info '本机启动检查不等于公网可连接；请在 Surge 中测试节点。NAT VPS 还需要端口映射。'
+    info '5/5 安装流程完成。'
+    show_result "$public_ip" "$port" "$psk"
 }
 
 main "$@"

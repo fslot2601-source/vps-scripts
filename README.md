@@ -31,6 +31,17 @@ GitHub 仓库：https://github.com/fslot2601-source/vps-scripts
 
 不需要手填端口、密码或 IP，也不需要域名和证书。端口从 20000–49999 中随机选择并检查 TCP/UDP 占用；密钥为随机生成的 32 位十六进制字符串。
 
+### 安装完成后的显示
+
+结果面板会单独列出 **服务器 IP、连接端口、完整密钥、协议版本和服务状态**，并在醒目的分隔线之间输出一整行可复制的 Surge 节点配置。
+
+- 成功状态绿色，IP 与端口青色，节点行加粗，安全组提醒黄色。
+- 复制节点行到 Surge 的 `[Proxy]` 段，不要复制标题或边框。
+- 输出重定向到文件时自动禁用颜色；也支持 `NO_COLOR=1`。
+- `/etc/snell/surge-proxy.txt` 始终保存不含颜色或边框的纯节点行。
+
+Gitea 镜像：[PI/vps-scripts](http://10.0.0.98:3000/PI/vps-scripts)（内网访问，每 8 小时从 GitHub 同步）。后续修改以 GitHub 为主，不直接编辑镜像。
+
 ### 支持范围
 
 - Debian 11+、Ubuntu 22.04+，使用 systemd。
